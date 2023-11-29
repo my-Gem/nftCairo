@@ -201,6 +201,7 @@ mod MyNftV2 {
                 break ();
             }
             self.WhiteListUser.write(*tos.at(i.try_into().unwrap()), true);
+            i += 1;
         }
         
     }
