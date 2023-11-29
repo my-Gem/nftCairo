@@ -66,10 +66,10 @@ mod Router {
 
     // 构造方法功能是初始化合约可理解成solidity的constructor方法
     #[constructor]
-    fn constructor(ref self: ContractState, _foctory: ContractAddress, _manager: ContractAddress) {
+    fn constructor(ref self: ContractState, _factory: ContractAddress, _manager: ContractAddress) {
         let mut unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::initializer(ref unsafe_state_ownable, _manager);
-        self.FactoryV3.write(_foctory);
+        self.FactoryV3.write(_factory);
     }
 
 
