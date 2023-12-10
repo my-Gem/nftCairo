@@ -57,7 +57,7 @@ mod FactoryV3 {
         // 盐值
         let salt: felt252 = u64_to_felt252 (get_block_timestamp() +  u64_try_from_felt252(_salt).unwrap());
         let mut calldata = array![owner, _blindBoxOpened, _total, _mintMaxAmount, _airDrop, _switch, _publicMintPrice, _blindTokenURI, _name, _symbol];
-        let (nftAddress, _) = deploy_syscall(_erc721Hash.try_into().unwrap(), _salt, calldata.span(), true).unwrap();
+        let (nftAddress, _) = deploy_syscall(_erc721Hash.try_into().unwrap(), salt, calldata.span(), true).unwrap();
         nftAddress
     }
 
