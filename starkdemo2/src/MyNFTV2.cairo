@@ -2,6 +2,7 @@
 
 #[starknet::contract]
 mod MyNftV2 {
+    
     use integer::u256;
     use integer::u256_from_felt252;
     use array::ArrayTrait;
@@ -15,22 +16,21 @@ mod MyNftV2 {
     use openzeppelin::token::erc20::interface::ERC20CamelABIDispatcherTrait;
     use openzeppelin::token::erc721::ERC721;
     use openzeppelin::access::ownable::Ownable;
-    use starknet::ContractAddressIntoFelt252;
-    use starknet::{ContractAddress, get_caller_address, contract_address_to_felt252};
+    use starknet::{ContractAddress, get_caller_address, ContractAddressIntoFelt252, contract_address_to_felt252};
 
     #[storage]
     struct Storage {
+        ReentrancyGuard_entered: bool,
         TokenId: u256,
         CurrentIndex: u256,
-        Switch: u256,
-        //PublicSwitch: u256,
+        WhiteListSwitch: u256,
+        PublicMintSwitch: u256,
         BlindBoxOpened: u256,
         TotalSupply: felt252,
         MintMaxAmount: felt252,
         AirDrop: felt252,
         BlindTokenURI: felt252,
         PublicMintPrice: felt252,
-        ReentrancyGuard_entered: bool,
         MintLimited: LegacyMap<(ContractAddress, u256), bool>,
         WhiteListUser: LegacyMap<ContractAddress, bool>
     }
@@ -47,7 +47,7 @@ mod MyNftV2 {
         _total: felt252,
         _mintMaxAmount: felt252,
         _airDrop: felt252,
-        _switch: felt252,
+        _whiteListSwitch: felt252,
         _publicMintPrice: felt252,
         _blindTokenURI: felt252,
         _name: felt252,
@@ -58,7 +58,8 @@ mod MyNftV2 {
         self.MintMaxAmount.write(_mintMaxAmount);
         self.TotalSupply.write(_total);
         self.AirDrop.write(_airDrop);
-        self.Switch.write(u256_from_felt252(_switch));
+        self.WhiteListSwitch.write(u256_from_felt252(_whiteListSwitch));
+        self.PublicMintSwitch.write(1);
         self.PublicMintPrice.write(_publicMintPrice);
         let mut unsafe_state_erc721 = ERC721::unsafe_new_contract_state();
         let mut unsafe_state_ownable = Ownable::unsafe_new_contract_state();
@@ -101,7 +102,13 @@ mod MyNftV2 {
     // 查询nft状态
     #[external(v0)]
     fn checkNftStatus(self: @ContractState) -> u256 {
-        self.Switch.read()
+        self.WhiteListSwitch.read()
+    }
+
+     // 查询公开铸造是否开启
+    #[external(v0)]
+    fn checkNftPublicMintStatus(self: @ContractState) -> u256 {
+        self.PublicMintSwitch.read()
     }
 
     // 查询nft盲盒状态
@@ -129,7 +136,7 @@ mod MyNftV2 {
         ERC721::ERC721Impl::balance_of(@unsafe_state, account)
     }
 
-    //根据token id 查询所有者的地址
+    // 根据token id 查询所有者的地址
     #[external(v0)]
     fn ownerOf(self: @ContractState, token_id: u256) -> ContractAddress {
         let unsafe_state = ERC721::unsafe_new_contract_state();
@@ -152,12 +159,6 @@ mod MyNftV2 {
         ERC721::ERC721Impl::get_approved(@unsafe_state, token_id)
     }
 
-    // 查询公开铸造是否开启
-    // #[external(v0)]
-    // fn checkNftPublicMintStatus(self: @ContractState) -> u256 {
-    //     self.PublicSwitch.read()
-    // }
-
     // 根据授权账户给接收账户来设置授权
     #[external(v0)]
     fn setApprovalForAll(ref self: ContractState, operator: ContractAddress, approved: bool) {
@@ -173,12 +174,20 @@ mod MyNftV2 {
         Ownable::OwnableCamelOnlyImpl::transferOwnership(ref unsafe_state_ownable, newOwner);
     }
 
-    // 管理员设置Nft是否暂停
+    // 设置公开铸造是否开启还是暂停
     #[external(v0)]
-    fn changeNftStatus(ref self: ContractState, _newSwitch: u256) {
+    fn changeNftPublicMintSwitch(ref self: ContractState, _publicMintSwitch: u256) {
         let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
-        self.Switch.write(_newSwitch);
+        self.PublicMintSwitch.write(_publicMintSwitch);
+    }
+
+    // 管理员设置Nft白名单是否开启开启还是暂停
+    #[external(v0)]
+    fn changeNftWhiteListStatus(ref self: ContractState, _newSwitch: u256) {
+        let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
+        Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
+        self.WhiteListSwitch.write(_newSwitch);
     }
 
     // 更改盲盒状态
@@ -189,12 +198,12 @@ mod MyNftV2 {
         self.BlindBoxOpened.write(_newBlindBoxOpened);
     }
 
-    //设置白名单的地址
+    // 设置白名单的地址
     #[external(v0)]
-    fn changeWhiteList(ref self: ContractState, tos: Array<ContractAddress>) {
+    fn setWhiteList(ref self: ContractState, tos: Array<ContractAddress>) {
         let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
-        let i: u256 = 0;
+        let mut i: u256 = 0;
         let len: u256 = tos.len().into();
         loop {
             if(i >= len) {
@@ -206,33 +215,24 @@ mod MyNftV2 {
         
     }
 
-    //设置 Nft url
+    // 设置Nft url
     #[external(v0)]
     fn setTokenURI(
         ref self: ContractState,
         token_id: u256,
         token_uri: felt252
     ) {
-        assert(self.Switch.read() > 1, 'Not started yet');
         let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
         ERC721::InternalImpl::_set_token_uri(ref unsafe_state,token_id, token_uri);
     }
 
-
-    // 设置公开铸造是否开启
-    // #[external(v0)]
-    // fn changeNftPublicMintSwitch(ref self: ContractState, _publicSwitch: u256) {
-    //     let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
-    //     Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
-    //     self.PublicSwitch.write(_publicSwitch);
-    // }
-
-    // 白名单账户mint
+    // 白名单mint
     #[external(v0)]
     fn whiteListMint(ref self: ContractState, token_uri: felt252, to: ContractAddress, amount: u256) {
-        assert(self.Switch.read() > 1, 'Not started yet');
+        // 判断白名单是否开启
+        assert(self.WhiteListSwitch.read() > 1, 'Whitelist is not enabled');
         // 判断用户是否在白名单内
         assert(self.WhiteListUser.read(to), 'Non-whitelisted users');
         let mut index: u256 = self.CurrentIndex.read();
@@ -270,8 +270,7 @@ mod MyNftV2 {
     // 公开mint
     #[external(v0)]
     fn publicMint(ref self: ContractState, to: ContractAddress, token_uri: felt252, amount: u256) {
-        //assert(self.Switch.read() > 1 && self.PublicSwitch.read() > 1, 'Not started yet');
-        assert(self.Switch.read() > 1, 'Not started yet');
+        assert(self.PublicMintSwitch.read() > 1, 'Not started yet');
         assert(!self.ReentrancyGuard_entered.read(), Errors::REENTRANT_CALL);
         self.ReentrancyGuard_entered.write(true);
         let caller = get_caller_address();
@@ -321,10 +320,9 @@ mod MyNftV2 {
         self.ReentrancyGuard_entered.write(false);
     }
 
-    // 管理员设置空投Nft
+    // 管理员空投Nft
     #[external(v0)]
     fn freeAirDrop(ref self: ContractState, to: ContractAddress, tokenId: u256, tokenUri: felt252) {
-        assert(self.Switch.read() > 1, 'Not started yet');
         let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
@@ -369,7 +367,7 @@ mod MyNftV2 {
         ERC721::ERC721Impl::safe_transfer_from(ref unsafe_state, from, to, token_id, data)
     }
 
-    //销毁 Token
+    // 销毁 Token
     #[external(v0)]
     fn burn(ref self: ContractState, token_id: u256) {
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
