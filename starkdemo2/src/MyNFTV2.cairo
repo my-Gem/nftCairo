@@ -16,7 +16,8 @@ mod MyNftV2 {
     use openzeppelin::token::erc20::interface::ERC20CamelABIDispatcherTrait;
     use openzeppelin::token::erc721::ERC721;
     use openzeppelin::access::ownable::Ownable;
-    use starknet::{ContractAddress, get_caller_address, ContractAddressIntoFelt252, contract_address_to_felt252};
+    use openzeppelin::upgrades::upgradeable::Upgradeable;
+    use starknet::{ClassHash, ContractAddress, get_caller_address, ContractAddressIntoFelt252, contract_address_to_felt252};
 
     #[storage]
     struct Storage {
@@ -37,6 +38,7 @@ mod MyNftV2 {
 
     mod Errors {
         const REENTRANT_CALL: felt252 = 'ReentrancyGuard: reentrant call';
+        const INVALID_ACCOUNT: felt252 = 'MyNftV2: invalid account';
     }
 
     #[constructor]
@@ -231,6 +233,7 @@ mod MyNftV2 {
     // 白名单mint
     #[external(v0)]
     fn whiteListMint(ref self: ContractState, token_uri: felt252, to: ContractAddress, amount: u256) {
+        assert(!to.is_zero(), Errors::INVALID_ACCOUNT);
         // 判断白名单是否开启
         assert(self.WhiteListSwitch.read() > 1, 'Whitelist is not enabled');
         // 判断用户是否在白名单内
@@ -270,6 +273,7 @@ mod MyNftV2 {
     // 公开mint
     #[external(v0)]
     fn publicMint(ref self: ContractState, to: ContractAddress, token_uri: felt252, amount: u256) {
+        assert(!to.is_zero(), Errors::INVALID_ACCOUNT);
         assert(self.PublicMintSwitch.read() > 1, 'Not started yet');
         assert(!self.ReentrancyGuard_entered.read(), Errors::REENTRANT_CALL);
         self.ReentrancyGuard_entered.write(true);
@@ -323,6 +327,7 @@ mod MyNftV2 {
     // 管理员空投Nft
     #[external(v0)]
     fn freeAirDrop(ref self: ContractState, to: ContractAddress, tokenId: u256, tokenUri: felt252) {
+        assert(!to.is_zero(), Errors::INVALID_ACCOUNT);
         let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
@@ -373,4 +378,16 @@ mod MyNftV2 {
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
         ERC721::InternalImpl::_burn(ref unsafe_state, token_id);
     }
+
+
+    // 可升级nft方法
+    #[external(v0)]
+    fn upgrade(ref self: ContractState, new_class_hash: felt252) {
+        let newClassHash: ClassHash = new_class_hash.try_into().unwrap();
+        let unsafe_state_ownable = Ownable::unsafe_new_contract_state();
+        Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
+        let mut unsafe_state = Upgradeable::unsafe_new_contract_state();
+        Upgradeable::InternalImpl::_upgrade(ref unsafe_state, newClassHash);
+    }
+
 }
