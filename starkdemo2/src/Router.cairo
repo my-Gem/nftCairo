@@ -36,7 +36,7 @@ mod Router {
     use super::IFactoryV3DispatcherTrait;
     use starknet::{ContractAddress, get_caller_address};
 
-    //  #[storage] 可理解成solidity中用于存储状态变量的插槽,如果contract中没有状态变量, #[storage],struct 也必须要写上
+    //  #[storage] 可理解成solidity中用于存储状态变量的插槽,如果starknet contract中没有状态变量, #[storage],struct 也必须要写上
     #[storage]
     struct Storage {
         FactoryV3: ContractAddress,
