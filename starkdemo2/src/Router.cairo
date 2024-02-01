@@ -130,6 +130,7 @@ mod Router {
         let _caller = get_caller_address();
         // 平台收取0.0001 eth
         let amount: u256 = u256_from_felt252(100000000000000);
+        // eth即eth合约地址,在starknet中eth是以erc20 token的形式存在,可理解成solidity中的weth
         let eth: ContractAddress = 0x49D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7
             .try_into()
             .unwrap();
