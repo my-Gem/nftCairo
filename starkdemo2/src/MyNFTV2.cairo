@@ -66,7 +66,7 @@ mod MyNftV2 {
         let mut unsafe_state_erc721 = ERC721::unsafe_new_contract_state();
         let mut unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         ERC721::InternalImpl::initializer(ref unsafe_state_erc721, _name, _symbol);
-        Ownable::InternalImpl::initializer( ref unsafe_state_ownable, _owner.try_into().unwrap());
+        Ownable::InternalImpl::initializer(ref unsafe_state_ownable, _owner.try_into().unwrap());
     }
 
     // 查询Nft统称
@@ -372,7 +372,7 @@ mod MyNftV2 {
         ERC721::ERC721Impl::safe_transfer_from(ref unsafe_state, from, to, token_id, data)
     }
 
-    // 销毁 Token
+    // 销毁Token
     #[external(v0)]
     fn burn(ref self: ContractState, token_id: u256) {
         let mut unsafe_state = ERC721::unsafe_new_contract_state();
@@ -380,7 +380,7 @@ mod MyNftV2 {
     }
 
 
-    // 可升级nft方法
+    // 管理员设置可升级nft classHash
     #[external(v0)]
     fn upgrade(ref self: ContractState, new_class_hash: felt252) {
         let newClassHash: ClassHash = new_class_hash.try_into().unwrap();
