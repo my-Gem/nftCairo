@@ -41,6 +41,7 @@ mod MyNftV2 {
         const INVALID_ACCOUNT: felt252 = 'MyNftV2: invalid account';
     }
 
+    // constructor即构造方法,这里用于初始化nft数据
     #[constructor]
     fn constructor(
         ref self: ContractState,
