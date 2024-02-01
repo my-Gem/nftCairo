@@ -2,7 +2,7 @@
 
 use starknet::ContractAddress;
 // Factory合约的接口
-// #[starknet::interface] 可理解成solidity的接口,只要添加这个注解系统就会自动给接口产生两个调度程序IFactoryDispatcher与IFactoryDispatcherTrait,这两个文件用于合约调用.
+// #[starknet::interface] 可理解成solidity的接口或java的注解,只要添加这个注解系统就会自动给接口产生两个调度程序IFactoryDispatcher与IFactoryDispatcherTrait,这两个文件用于合约调用.
 #[starknet::interface]
 trait IFactoryV3<TState> {
     fn createNft(
@@ -22,7 +22,7 @@ trait IFactoryV3<TState> {
     ) -> ContractAddress;
 }
 
-// mod关键字即声明合约，#[starknet::contract]可理解成java的注解,必须写上
+// mod关键字即声明合约, #[starknet::contract]可理解成java的注解,必须写上
 #[starknet::contract]
 mod Router {
    
