@@ -22,6 +22,7 @@ trait IFactoryV3<TState> {
     ) -> ContractAddress;
 }
 
+// mod关键字即声明合约，#[starknet::contract]可理解成java的注解,必须写上
 #[starknet::contract]
 mod Router {
    
@@ -35,7 +36,7 @@ mod Router {
     use super::IFactoryV3DispatcherTrait;
     use starknet::{ContractAddress, get_caller_address};
 
-    //  #[storage] 可理解成solidity用于存储状态变量,如果没有状态变量, #[storage],struct 也必须要有
+    //  #[storage] 可理解成solidity中用于存储状态变量的插槽,如果contract中没有状态变量, #[storage],struct 也必须要写上
     #[storage]
     struct Storage {
         FactoryV3: ContractAddress,
@@ -152,6 +153,7 @@ mod Router {
                 _name,
                 _symbol
             );
+        // 通过事件存储nft合约与部署者地址,再通过链外解析交易收据拿到部署者地址与NFT合约地址
         self.emit(Nft { _deployer: _caller, _nftAddress: nft });
     }
 
