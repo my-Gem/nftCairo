@@ -153,7 +153,7 @@ mod Router {
                 _name,
                 _symbol
             );
-        // 通过事件存储nft合约与部署者地址,再通过链外解析交易收据拿到部署者地址与NFT合约地址
+        // 通过事件存储nft合约与部署者地址,再通过链外解析交易收据拿到部署者地址与NFT合约地址,这步骤等同于solidity中的emit触发事件用于存储日志
         self.emit(Nft { _deployer: _caller, _nftAddress: nft });
     }
 
