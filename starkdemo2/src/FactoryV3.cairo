@@ -5,12 +5,11 @@ mod FactoryV3 {
    
     use integer::u64_to_felt252;
     use integer::u64_try_from_felt252;
-    use starknet::get_block_timestamp;
-    use starknet::syscalls::deploy_syscall;
     use result::ResultTrait;
     use array::ArrayTrait;
     use array::SpanTrait;
-    use starknet::{ContractAddress, get_caller_address, contract_address_to_felt252};
+    use starknet::syscalls::deploy_syscall;
+    use starknet::{get_block_timestamp, ContractAddress, get_caller_address, contract_address_to_felt252};
     use openzeppelin::access::ownable::Ownable;
     
     #[storage]
