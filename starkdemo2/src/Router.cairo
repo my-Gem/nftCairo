@@ -76,10 +76,10 @@ mod Router {
 
     // 方法功能是更改管理员
     #[external(v0)]
-    fn changeManger(ref self: ContractState, _newmanager: ContractAddress) {
+    fn changeManger(ref self: ContractState, _newManager: ContractAddress) {
         let mut unsafe_state_ownable = Ownable::unsafe_new_contract_state();
         Ownable::InternalImpl::assert_only_owner(@unsafe_state_ownable);
-        Ownable::OwnableCamelOnlyImpl::transferOwnership(ref unsafe_state_ownable, _newmanager);
+        Ownable::OwnableCamelOnlyImpl::transferOwnership(ref unsafe_state_ownable, _newManager);
     }
 
     // 方法功能是外部设置NFT平台是否启动或停止
