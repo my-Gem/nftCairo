@@ -100,7 +100,6 @@ mod Router {
 
 
     // 方法功能是创建NFT,可理解成部署NFT合约
-    // _caller即调用者
     // _erc721Hash即erc721的类哈希
     // _salt即合约部署的盐值
     // _blindBoxOpened即盲盒是否开启
